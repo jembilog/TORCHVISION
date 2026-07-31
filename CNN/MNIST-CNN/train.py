@@ -81,10 +81,18 @@ class CNN(nn.Module):
     def forward(self, x):
         x = self.convolution1(x)
         x = self.relu1(x)
+        x = self.pool(x)
 
+        x = self.convolution2(x)
+        x = self.relu2(x)
+        x = self.pool(x)
 
+        x = self.flatten(x)
+        x = self.fc1(x)
+        x = self.relu2(x)
+        x = self.fc2(x)
 
-
+        return x
 
 # plt.imshow(
 #     images[0].squeeze(),
