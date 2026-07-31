@@ -93,7 +93,37 @@ class CNN(nn.Module):
         x = self.fc2(x)
 
         return x
+model =  CNN().to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
+epochs = 10
 
+for epoch in range(epochs):
+    model.train()
+    running_loss = 0
+    correct = 0
+    total = 0
+
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+        predicted = torch.argmax(outputs, dim=1)
+        correct += (predicted == labels).sum().item()
+        total += labels.size(0)
+    train_loss = running_loss / len(train_loader)
+    train_accuracy = correct / total
+    print(
+        f"Epoch {epoch+1} | "
+        f"Loss: {train_loss:.4f} | "
+        f"Accuracy: {train_accuracy*100:.2f}%"
+    )
 # plt.imshow(
 #     images[0].squeeze(),
 #     cmap="gray"
