@@ -45,6 +45,16 @@ test_loader = DataLoader(
     shuffle=False
 )
 
-images, labels = next(iter(train_loader))
+images, labels = next(iter(train_loader)) #if u want to display just change this in to test_loader or simply chnage the train variable in train_dataset into false so that the output will be the same on its index 
 print(images.shape)
 print(labels.shape)
+
+# for looking pcitures
+# plt.imshow(
+#     images[0].squeeze(), 
+#     cmap="gray"
+# )
+# plt.title(
+#     f"Label : {labels[0].item()}"
+# )
+# plt.show()
