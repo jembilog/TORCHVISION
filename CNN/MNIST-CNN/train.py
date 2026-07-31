@@ -4,6 +4,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score,confusion_matrix, classification_report
 import matplotlib.pyplot as plt
+from torch.utils.data import random_split
 
 device = torch.device(
     "cuda" if  torch.cuda.is_available() else "cpu"
@@ -18,7 +19,6 @@ transform = transforms.Compose([
         (0.3081,),
     )
 ])
-
 #datasets
 train_dataset = datasets.MNIST(
     root="data",
@@ -33,11 +33,20 @@ test_dataset = datasets.MNIST(
     transform=transform
 )
 
+train_size = int(0.8 * len(train_dataset))
+val_size = len(train_dataset) - train_size
+train_dataset, val_dataset = random_split(train_dataset,[train_size, val_size])
+
 #loader
 train_loader = DataLoader(
     train_dataset,
     batch_size=64,
     shuffle=True
+)
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=64,
+    shuffle=False
 )
 test_loader = DataLoader(
     test_dataset,
@@ -54,8 +63,8 @@ class CNN(nn.Module):
         super().__init__()
         #convolutional and pooling layers
         self.convolution1 = nn.Conv2d(
-            1,
-            32,
+            1, #input
+            32, #no. of filters / will produced feature maps
             kernel_size=3, 
             stride=1,
             padding=1
@@ -66,8 +75,8 @@ class CNN(nn.Module):
             stride=2
         )
         self.convolution2 = nn.Conv2d(
-            32,
-            64,
+            32, #input
+            64, #no. of filters / will produced feature maps
             kernel_size=3,
             stride=1,
             padding=1
@@ -93,10 +102,17 @@ class CNN(nn.Module):
         x = self.fc2(x)
 
         return x
+
+
 model =  CNN().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
 epochs = 10
+
+#for early stopping
+best_loss = float("inf")
+counter = 0
+patience = 5
 
 for epoch in range(epochs):
     model.train()
@@ -119,11 +135,64 @@ for epoch in range(epochs):
         total += labels.size(0)
     train_loss = running_loss / len(train_loader)
     train_accuracy = correct / total
+    # print(
+    #     f"Epoch {epoch+1} | "
+    #     f"Loss: {train_loss:.4f} | "
+    #     f"Accuracy: {train_accuracy*100:.2f}%"
+    # )
+
+    model.eval()
+
+    validation_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            validation_loss += loss.item()
+            predicted = torch.argmax(outputs,dim=1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+        validation_loss /= len(val_loader)
+        validation_accuracy = correct / total
     print(
         f"Epoch {epoch+1} | "
-        f"Loss: {train_loss:.4f} | "
-        f"Accuracy: {train_accuracy*100:.2f}%"
+        f"Train Loss: {train_loss:.4f} | "
+        f"Train Acc: {train_accuracy*100:.2f}% | "
+        f"Val loss: {validation_loss:.4f} | " 
+        f"Val Acc: {validation_accuracy*100:.2f}%"
     )
+
+    if validation_loss < best_loss:
+        best_loss = validation_loss
+        counnter = 0 
+        torch.save(model.state_dict(), "best_model.pth")
+        print("Best model updated")
+    else:
+        counnter += 1
+        if counnter >= patience:
+            print("Early stopping triggered")
+            break
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # plt.imshow(
 #     images[0].squeeze(),
 #     cmap="gray"
