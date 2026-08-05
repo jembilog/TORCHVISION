@@ -9,7 +9,7 @@ IMAGE_SIZE = 224
 #training
 BATCH_SIZE = 64
 EPOCHS = 20
-LEARNING_RATE = 0.00001
+LEARNING_RATE = 0.00001  #switch to 0.001 if feature extraction is the option
 
 #model
 NUM_CLASSES = 9
