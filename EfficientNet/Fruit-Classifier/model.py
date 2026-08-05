@@ -12,7 +12,7 @@ def create_model():
     for param in model.parameters():
         param.requires_grad = False
 
-        # Unfreeze last feature block
+        # Unfreeze last feature block # this is the fine tuning code block. Uncomment this if you want to switch to feature extraction only
     for param in model.features[-1].parameters():
         param.requires_grad = True
 
